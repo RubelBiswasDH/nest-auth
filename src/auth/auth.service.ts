@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-
+import { MysqlErrorCode } from '../common/enums/error-codes.enum';
 import { SignUpDto } from './dto/sign-up.dto';
 import { User } from '../user/entities/user.entity';
 import { BcryptService } from './bcrypt.service';
@@ -22,6 +22,11 @@ export class AuthService {
       user.passwordHash = await this.bcryptService.hash(password);
       await this.userRepository.save(user);
     } catch (error) {
+      if (error.code === MysqlErrorCode.UniqueViolation) {
+        throw new ConflictException([
+          { email: `Email ${email} already exist` },
+        ]);
+      }
       throw error;
     }
   }

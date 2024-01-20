@@ -6,10 +6,8 @@ import {
   MinLength,
 } from 'class-validator';
 import { Match } from '../../common/decorators/match.decorator';
-import { IsEmailAlreadyExist } from '../../common/decorators/isEmailAlreadyExist.decorator';
 
 export class SignUpDto {
-  @IsEmailAlreadyExist({ message: `Email $value is already exist` })
   @IsEmail()
   @MaxLength(255)
   @IsNotEmpty()
