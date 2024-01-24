@@ -20,7 +20,7 @@ export class User {
   @Index({ unique: true })
   email: string;
 
-  @Exclude()
+  @Exclude({ toPlainOnly: true })
   @IsNotEmpty()
   @Column()
   passwordHash: string;

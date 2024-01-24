@@ -1,5 +1,4 @@
 import { Controller, Get, Param } from '@nestjs/common';
-
 import { UserService } from './user.service';
 
 @Controller('users')
@@ -13,5 +12,10 @@ export class UserController {
   async findOne(@Param('id') id: any) {
     const todo = await this.usersService.getMe(id);
     return todo;
+  }
+
+  @Get()
+  async findMany() {
+    return await this.usersService.getUsers();
   }
 }
