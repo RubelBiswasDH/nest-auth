@@ -9,6 +9,7 @@ import { User } from '../user/entities/user.entity';
 import { RefreshToken } from '../token/entities/refresh-token.entity';
 import jwtConfig from '../common/config/jwt.config';
 import { JwtStrategy } from './strategies/jwt-strategy';
+import { JwtRTStrategy } from './strategies/jwt-rt-strategy';
 import { TokenService } from 'src/token/token.service';
 
 @Module({
@@ -17,7 +18,13 @@ import { TokenService } from 'src/token/token.service';
     JwtModule.registerAsync(jwtConfig.asProvider()),
   ],
   controllers: [AuthController],
-  providers: [TokenService, AuthService, BcryptService, JwtStrategy],
+  providers: [
+    TokenService,
+    AuthService,
+    BcryptService,
+    JwtStrategy,
+    JwtRTStrategy,
+  ],
   exports: [JwtModule],
 })
 export class AuthModule {}

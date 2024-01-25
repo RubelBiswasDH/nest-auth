@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   BadRequestException,
+  NotFoundException,
   Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -29,7 +30,7 @@ export class AuthService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(RefreshToken)
-    private readonly refreshTokenRepository: Repository<User>,
+    private readonly refreshTokenRepository: Repository<RefreshToken>,
   ) {}
 
   async signUp(signUpDto: SignUpDto): Promise<void> {
@@ -121,5 +122,29 @@ export class AuthService {
     this.refreshTokenRepository.save(token);
 
     return { refreshToken };
+  }
+
+  async getAccessTokenFromRefreshToken({
+    refreshToken,
+  }: {
+    refreshToken: string;
+  }): Promise<{ accessToken: string; refreshToken?: string }> {
+    const token = await this.refreshTokenRepository.findOne({
+      where: { refreshToken: refreshToken },
+    });
+
+    if (!token) {
+      throw new NotFoundException('Provided token is invalid!');
+    }
+
+    const currentDate = new Date();
+
+    if (token.expiresAt < currentDate) {
+      throw new Error('Refresh token expired');
+    }
+
+    const oldPaload = this.jwtService.verify(refreshToken);
+    const { accessToken } = await this.generateAccessToken(oldPaload);
+    return { accessToken };
   }
 }
