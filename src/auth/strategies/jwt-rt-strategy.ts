@@ -15,7 +15,7 @@ export class JwtRTStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        ExtractJwt.fromBodyField('refresh_token'),
+        ExtractJwt.fromBodyField('refreshToken'),
       ]),
       secretOrKey: jwtConfiguration.secret,
       passReqToCallback: true,
