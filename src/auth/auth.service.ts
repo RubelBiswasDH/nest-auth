@@ -16,6 +16,8 @@ import { IActiveUserData } from 'src/common/interfaces/active-user-data.interfac
 import jwtConfig from '../common/config/jwt.config';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigType } from '@nestjs/config';
+import { RefreshToken } from 'src/token/entities/refresh-token.entity';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class AuthService {
@@ -26,6 +28,8 @@ export class AuthService {
     private readonly bcryptService: BcryptService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(RefreshToken)
+    private readonly refreshTokenRepository: Repository<User>,
   ) {}
 
   async signUp(signUpDto: SignUpDto): Promise<void> {
@@ -45,7 +49,9 @@ export class AuthService {
     }
   }
 
-  async signIn(signInDto: SignInDto): Promise<{ accessToken: string }> {
+  async signIn(
+    signInDto: SignInDto,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const { email, password } = signInDto;
     const user = await this.userRepository.findOne({
       where: {
@@ -65,7 +71,10 @@ export class AuthService {
       throw new BadRequestException('The password is incorrect!');
     }
 
-    return await this.generateAccessToken(user);
+    const { refreshToken } = await this.generateRefreshToken(user);
+    const { accessToken } = await this.generateAccessToken(user);
+
+    return { refreshToken, accessToken };
   }
 
   async generateAccessToken(
@@ -86,5 +95,31 @@ export class AuthService {
     );
 
     return { accessToken };
+  }
+
+  async generateRefreshToken(
+    user: Partial<User>,
+  ): Promise<{ refreshToken: string }> {
+    const tokenId = randomUUID();
+
+    const refreshToken = await this.jwtService.signAsync(
+      {
+        id: user.id,
+        email: user.email,
+        tokenId,
+      } as IActiveUserData,
+      {
+        secret: this.jwtConfiguration.secret,
+        expiresIn: this.jwtConfiguration.refreshTokenTtl,
+      },
+    );
+
+    const token = new RefreshToken();
+    token.refreshToken = refreshToken;
+    token.expiresAt = dayjs().add(7, 'd').toDate();
+    token.userId = user.id!;
+    this.refreshTokenRepository.save(token);
+
+    return { refreshToken };
   }
 }

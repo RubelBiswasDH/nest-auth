@@ -10,6 +10,7 @@ import { TokenService } from './token/token.service';
 import jwtConfig from './common/config/jwt.config';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
+import { TokenModule } from './token/token.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -19,6 +20,7 @@ import { APP_GUARD } from '@nestjs/core';
     DatabaseModule,
     UserModule,
     AuthModule,
+    TokenModule,
   ],
   controllers: [AppController],
   providers: [
