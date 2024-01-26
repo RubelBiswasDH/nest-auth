@@ -120,7 +120,12 @@ export class AuthService {
 
     const token = new RefreshToken();
     token.refreshToken = refreshToken;
-    token.expiresAt = dayjs().add(7, 'd').toDate();
+    token.expiresAt = dayjs()
+      .add(
+        Number(this.jwtConfiguration.refreshTokenTtlValue),
+        this.jwtConfiguration.refreshTokenTtlUnit as any,
+      )
+      .toDate();
     token.userId = user.id!;
     this.refreshTokenRepository.save(token);
 
