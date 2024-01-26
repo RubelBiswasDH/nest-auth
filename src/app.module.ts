@@ -6,7 +6,6 @@ import databaseConfig from './common/config/database.config';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
-import { TokenService } from './token/token.service';
 import jwtConfig from './common/config/jwt.config';
 import mailConfig from './common/config/mail.config';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -29,7 +28,6 @@ import { MailService } from './mail/mail.service';
   controllers: [AppController],
   providers: [
     AppService,
-    TokenService,
     MailService,
     {
       provide: APP_GUARD,

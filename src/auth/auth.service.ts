@@ -2,7 +2,6 @@ import {
   Injectable,
   ConflictException,
   BadRequestException,
-  NotFoundException,
   Inject,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -22,10 +21,12 @@ import { RefreshToken } from 'src/token/entities/refresh-token.entity';
 import * as dayjs from 'dayjs';
 import { JwtPayload } from 'src/common/interfaces/jwt.payload.interface';
 import { INVALID_TOKEN_MESSAGE } from 'src/common/constants';
+import { TokenService } from 'src/token/token.service';
 
 @Injectable()
 export class AuthService {
   constructor(
+    private readonly tokenService: TokenService,
     private readonly jwtService: JwtService,
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
@@ -138,11 +139,11 @@ export class AuthService {
     refreshToken: string;
   }): Promise<{ accessToken: string; refreshToken?: string }> {
     const token = await this.refreshTokenRepository.findOne({
-      where: { refreshToken: refreshToken },
+      where: { refreshToken: Equal(refreshToken), isBlackListed: Equal(0) },
     });
 
     if (!token) {
-      throw new NotFoundException(INVALID_TOKEN_MESSAGE);
+      throw new UnauthorizedException(INVALID_TOKEN_MESSAGE);
     }
 
     const currentDate = new Date();
@@ -166,5 +167,9 @@ export class AuthService {
       });
     }
     return { id: payload.id, email: payload.email, tokenId: payload.tokenId };
+  }
+
+  async logout(refreshToken: string, userId: number): Promise<any> {
+    await this.tokenService.blacklistToken(refreshToken, userId);
   }
 }
