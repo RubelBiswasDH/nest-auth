@@ -4,9 +4,10 @@ import {
   BadRequestException,
   NotFoundException,
   Inject,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Equal } from 'typeorm';
 import { MysqlErrorCode } from '../common/enums/error-codes.enum';
 import { SignUpDto } from './dto/sign-up.dto';
 import { SignInDto } from './dto/sign-in.dto';
@@ -19,6 +20,8 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigType } from '@nestjs/config';
 import { RefreshToken } from 'src/token/entities/refresh-token.entity';
 import * as dayjs from 'dayjs';
+import { JwtPayload } from 'src/common/interfaces/jwt.payload.interface';
+import { INVALID_TOKEN_MESSAGE } from 'src/common/constants';
 
 @Injectable()
 export class AuthService {
@@ -134,7 +137,7 @@ export class AuthService {
     });
 
     if (!token) {
-      throw new NotFoundException('Provided token is invalid!');
+      throw new NotFoundException(INVALID_TOKEN_MESSAGE);
     }
 
     const currentDate = new Date();
@@ -146,5 +149,17 @@ export class AuthService {
     const oldPaload = this.jwtService.verify(refreshToken);
     const { accessToken } = await this.generateAccessToken(oldPaload);
     return { accessToken };
+  }
+
+  async validatePayload(payload: JwtPayload): Promise<any> {
+    const user = await this.userRepository.findOne({
+      where: { email: Equal(payload?.email ?? '') },
+    });
+    if (!user) {
+      throw new UnauthorizedException({
+        message: INVALID_TOKEN_MESSAGE,
+      });
+    }
+    return { id: payload.id, email: payload.email, tokenId: payload.tokenId };
   }
 }

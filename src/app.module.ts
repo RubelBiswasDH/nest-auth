@@ -18,9 +18,9 @@ import { TokenModule } from './token/token.module';
       load: [jwtConfig, databaseConfig],
     }),
     DatabaseModule,
+    TokenModule,
     UserModule,
     AuthModule,
-    TokenModule,
   ],
   controllers: [AppController],
   providers: [
