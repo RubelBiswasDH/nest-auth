@@ -1,21 +1,24 @@
 import {
-  Controller,
-  Post,
+  BadRequestException,
   Body,
-  Query,
+  Controller,
   HttpCode,
   HttpStatus,
-  BadRequestException,
+  Post,
+  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { SignUpDto } from './dto/sign-up.dto';
-import { SignInDto } from './dto/sign-in.dto';
-import { Public } from '../common/decorators/public.decorator';
-import { JwtRTGuard } from './guards/jwt-rt-guard';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { UseGuards } from '@nestjs/common';
-import { RefreshTokenDTO } from 'src/token/dtos/refresh-token.dto';
+import { Request } from 'express';
 import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { RefreshTokenDTO } from 'src/token/dtos/refresh-token.dto';
+import { Public } from '../common/decorators/public.decorator';
+import { AuthService } from './auth.service';
+import { ConfirmPasswordDto } from './dto/confirm-password.dto';
+import { SignInDto } from './dto/sign-in.dto';
+import { SignUpDto } from './dto/sign-up.dto';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { JwtRTGuard } from './guards/jwt-rt-guard';
 
 @Controller('auth')
 export class AuthController {
@@ -61,5 +64,28 @@ export class AuthController {
       await this.authService.logout(refreshToken, userId);
       return { message: 'Logout successfully!' };
     }
+  }
+
+  @Public()
+  @Post('request-reset-password')
+  @HttpCode(HttpStatus.OK)
+  async requestResetPassword(
+    @Body() body: Partial<SignInDto>,
+    @Req() req: Request,
+  ): Promise<any> {
+    return await this.authService.requestResetPassword(
+      body.email!,
+      `${req.protocol}://${req.get('Host')}`,
+    );
+  }
+
+  @Public()
+  @Post('confirm-reset-password')
+  @HttpCode(HttpStatus.OK)
+  async confirmResetPassword(
+    @Query() query: { token: string; tokenId: number },
+    @Body() data: ConfirmPasswordDto,
+  ): Promise<any> {
+    return await this.authService.confirmResetPassword(query, data.newPassword);
   }
 }

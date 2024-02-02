@@ -1,10 +1,10 @@
+import { Injectable } from '@nestjs/common';
 import {
   registerDecorator,
   ValidationOptions,
   ValidatorConstraint,
   ValidatorConstraintInterface,
 } from 'class-validator';
-import { Injectable } from '@nestjs/common';
 import { UserService } from '../../user/user.service';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class IsEmailAlreadyExistConstraint
 {
   constructor(protected readonly userService: UserService) {}
   async validate(email: any) {
-    const user = await this.userService.getUserByEmail(email);
+    const user = await this.userService.findUserByEmail(email);
     if (user) return false;
     return true;
   }
