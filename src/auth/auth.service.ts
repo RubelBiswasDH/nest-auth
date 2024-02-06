@@ -8,7 +8,7 @@ import {
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { randomBytes, randomUUID } from 'crypto';
+import { randomBytes, randomInt, randomUUID } from 'crypto';
 import * as dayjs from 'dayjs';
 import {
   INVALID_TOKEN_MESSAGE,
@@ -28,6 +28,7 @@ import { User } from '../user/entities/user.entity';
 import { BcryptService } from './bcrypt.service';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
+import { RequestPasswordChange } from './entities/request-password-change.entity';
 
 @Injectable()
 export class AuthService {
@@ -38,6 +39,8 @@ export class AuthService {
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     private readonly bcryptService: BcryptService,
+    @InjectRepository(RequestPasswordChange)
+    private readonly requestPasswordChangeRepository: Repository<RequestPasswordChange>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(RefreshToken)
@@ -276,5 +279,90 @@ export class AuthService {
     } as EmailDataDto);
 
     return { message: 'Password Updated Successfully' };
+  }
+
+  async requestChangePassword(data: any, reqUser: Partial<User>): Promise<any> {
+    const { email } = reqUser;
+    const { newPassword, oldPassword } = data;
+
+    const user = await this.userRepository.findOne({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found!');
+    }
+
+    const isPasswordMatch = await this.bcryptService.compare(
+      oldPassword,
+      user.passwordHash,
+    );
+
+    if (!isPasswordMatch) {
+      throw new BadRequestException('The password is incorrect!');
+    }
+
+    const otp = randomInt(100000, 999999);
+    const otpData = new RequestPasswordChange();
+
+    otpData.passwordHash = await this.bcryptService.hash(newPassword);
+    otpData.expiresAt = dayjs().add(120, 's').toDate();
+
+    Object.assign(otpData, { userId: user.id, otp: otp });
+
+    await this.requestPasswordChangeRepository.update(
+      { userId: reqUser.id },
+      { isBlackListed: 1 },
+    );
+
+    this.requestPasswordChangeRepository.save(otpData);
+
+    await this.mailService.sendEmail({
+      to: email,
+      subject: 'Password Change Reqeust',
+      html: `<div>
+    Use this OTP - ${otp} to change your password. This OTP will expire within two minutes</a></div>`,
+    } as EmailDataDto);
+
+    return { message: 'OTP send to user email' };
+  }
+
+  async confirmChangePassword(
+    otp: string,
+    reqUser: Partial<User>,
+  ): Promise<any> {
+    const otpData = await this.requestPasswordChangeRepository.findOne({
+      where: {
+        userId: Equal(reqUser.id!),
+        isBlackListed: Equal(0),
+        otp: otp,
+      },
+    });
+
+    const currentDate = new Date();
+
+    if (!otpData || otpData.expiresAt < currentDate) {
+      return { message: 'OTP expired, try to resend OTP' };
+    }
+
+    await this.userRepository.update(
+      { id: reqUser.id },
+      { passwordHash: otpData.passwordHash },
+    );
+
+    await this.requestPasswordChangeRepository.update(
+      { userId: reqUser.id, otp: otp },
+      { isBlackListed: 1, isPasswordChangeConfirmed: 1 },
+    );
+
+    await this.mailService.sendEmail({
+      to: reqUser.email,
+      subject: 'Password Change Successfully',
+      html: `<div>Your password has been changed successfully</div>`,
+    } as EmailDataDto);
+
+    return { message: 'Password Changed Successfully!' };
   }
 }

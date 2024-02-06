@@ -11,12 +11,18 @@ import { User } from '../user/entities/user.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { BcryptService } from './bcrypt.service';
+import { RequestPasswordChange } from './entities/request-password-change.entity';
 import { JwtRTStrategy } from './strategies/jwt-rt-strategy';
 import { JwtStrategy } from './strategies/jwt-strategy';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, RefreshToken, ResetPasswordToken]),
+    TypeOrmModule.forFeature([
+      User,
+      RefreshToken,
+      ResetPasswordToken,
+      RequestPasswordChange,
+    ]),
     JwtModule.registerAsync(jwtConfig.asProvider()),
   ],
   controllers: [AuthController],

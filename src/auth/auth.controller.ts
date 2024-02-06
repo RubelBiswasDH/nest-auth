@@ -15,6 +15,8 @@ import { RefreshTokenDTO } from 'src/token/dtos/refresh-token.dto';
 import { Public } from '../common/decorators/public.decorator';
 import { AuthService } from './auth.service';
 import { ConfirmPasswordDto } from './dto/confirm-password.dto';
+import { otpDTO } from './dto/otp.dto';
+import { RequestChangePasswordDTO } from './dto/request-change-password.dto';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -87,5 +89,25 @@ export class AuthController {
     @Body() data: ConfirmPasswordDto,
   ): Promise<any> {
     return await this.authService.confirmResetPassword(query, data.newPassword);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('request-password-change')
+  @HttpCode(HttpStatus.OK)
+  async requestPasswordChange(
+    @Body() data: RequestChangePasswordDTO,
+    @CurrentUser() user: any,
+  ): Promise<any> {
+    return await this.authService.requestChangePassword(data, user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('confirm-password-change')
+  @HttpCode(HttpStatus.OK)
+  async confirmPasswordChange(
+    @Body() data: otpDTO,
+    @CurrentUser() user: any,
+  ): Promise<any> {
+    return await this.authService.confirmChangePassword(data.otp, user);
   }
 }
