@@ -1,6 +1,6 @@
+import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
@@ -23,6 +23,9 @@ async function bootstrap() {
       validateCustomDecorators: true,
     }),
   );
+
+  app.enableCors();
+
   await app.listen(3000);
 }
 
