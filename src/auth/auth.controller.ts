@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -109,5 +110,12 @@ export class AuthController {
     @CurrentUser() user: any,
   ): Promise<any> {
     return await this.authService.confirmChangePassword(data.otp, user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('user')
+  @HttpCode(HttpStatus.OK)
+  async getAuthUser(@CurrentUser() user: any): Promise<any> {
+    return await this.authService.getAuthUser(user?.email);
   }
 }

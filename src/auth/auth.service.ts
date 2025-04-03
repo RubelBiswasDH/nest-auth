@@ -365,4 +365,17 @@ export class AuthService {
 
     return { message: 'Password Changed Successfully!' };
   }
+  async getAuthUser(email: string) {
+    const user = await this.userRepository.findOne({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) {
+      throw new BadRequestException('User not found!');
+    }
+
+    return { id: user?.id, email: user?.email, username: user?.username };
+  }
 }
